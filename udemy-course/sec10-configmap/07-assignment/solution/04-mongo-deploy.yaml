@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name:  mongo-db
+  namespace: default
+  labels:
+    app:  mongo-db
+spec:
+  selector:
+    matchLabels:
+      app: mongo-db
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app:  mongo-db
+    spec:
+      # initContainers:
+        # Init containers are exactly like regular containers, except:
+          # - Init containers always run to completion.
+          # - Each init container must complete successfully before the next one starts.
+      containers:
+      - name:  mongo-db
+        image:  mongo:4.4-focal
+        envFrom:
+        - secretRef:
+            name: mongo-secret
+        ports:
+        - containerPort:  27017
+          name:  mongo-db-port
+        volumeMounts:
+          - name: "init-file"
+            mountPath: /docker-entrypoint-initdb.d
+      volumes:
+        - name: "init-file"
+          configMap: 
+              name: mongo-init-js
+      restartPolicy: Always

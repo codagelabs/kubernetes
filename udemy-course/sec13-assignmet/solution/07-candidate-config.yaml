@@ -1,0 +1,8 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: candidate-config
+  namespace: default
+data:
+  spring.data.mongodb.uri: "mongodb://candidate_user:candidate_password@mongo-service:27017/candidate"
+  job.service.url: "http://job-service:8080/job/"

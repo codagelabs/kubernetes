@@ -1,0 +1,31 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: app-properties
+  namespace: default
+data:
+  application.properties: |
+    appURl=dandalkda
+    name= rahul
+    sirname= shinde
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-pod
+spec: 
+  restartPolicy: Never
+  terminationGracePeriodSeconds: 1
+  containers: 
+  - name: ubuntu
+    image: ubuntu
+    volumeMounts:
+    - name: config-volume
+      mountPath: "/usr/share/props"
+    args:
+      - "sleep"
+      - "3600"
+  volumes:
+  - name: config-volume
+    configMap:  
+      name: app-properties

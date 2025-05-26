@@ -1,0 +1,133 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mongo-secret
+  namespace: default
+type: Opaque
+data:
+  MONGO_INITDB_ROOT_USERNAME: "YWRtaW4="
+  MONGO_INITDB_ROOT_PASSWORD: "cGFzc3dvcmQ="
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: express-secret
+  namespace: default
+type: Opaque
+data:
+  ME_CONFIG_MONGODB_ADMINUSERNAME: "YWRtaW4="
+  ME_CONFIG_MONGODB_ADMINPASSWORD: "cGFzc3dvcmQ="
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: express-config
+  namespace: default
+data:
+  ME_CONFIG_MONGODB_SERVER: mongo-service
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: mongo-init-js
+  namespace: default
+data:
+  data.js:  |
+    db = db.getSiblingDB('product-service');
+
+    db.createCollection('products');
+
+    db.products.insertMany(
+        [
+            {
+                "name":"iphone",
+                "price": "1200"
+            },
+            {
+                "name":"ipad",
+                "price": "800"
+            },
+            {
+                "name":"mac",
+                "price": "3000"
+            }                
+        ]
+    )
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "mongo-db"
+  namespace: default
+  labels:
+    app: "mongo-db"
+spec:
+  containers:
+  - name: mongo-db
+    image: "mongo:4.4-focal"
+    envFrom:
+    - secretRef:
+        name: mongo-secret
+    ports: 
+    - name: mongo-port
+      containerPort: 27017
+      protocol: TCP
+    volumeMounts:
+    - name: "init-file"
+      mountPath: /docker-entrypoint-initdb.d 
+  volumes: 
+  - name: "init-file"
+    configMap: 
+      name: mongo-init-js
+  restartPolicy: Always
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "mongo-express"
+  namespace: default
+  labels:
+    app: "mongo-express"
+spec:
+  containers:
+  - name: "mongo-express"
+    image: "mongo-express:1.0.0-alpha.4"
+    envFrom:
+    - secretRef:
+        name: express-secret
+    - configMapRef:
+        name: express-config
+    ports: 
+    - name: express-port
+      containerPort: 8081
+      protocol: TCP
+  restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo-service
+  namespace: default
+spec:
+  selector:
+    app: mongo-db
+  ports:
+  - name: mongo-service-port
+    protocol: TCP
+    port: 27017
+    targetPort: 27017
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: express-service
+  namespace: default
+spec:
+  selector:
+    app: mongo-express
+  ports:
+  - name: express-service
+    protocol: TCP
+    port: 8081
+    targetPort: 8081
+    

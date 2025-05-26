@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name:  my-deploy
+  namespace: default
+  labels:
+    app:  my-deploy
+spec:
+  selector:
+    matchLabels:
+      app: my-deploy
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app:  my-deploy
+    spec:
+      containers:
+      - name:  nginx
+        image:  nginx
+        resources:
+          requests:
+            cpu: 50m
+            memory: 10Mi
+          limits:
+            cpu: 50m
+            memory: 10Mi
+        # startupProbe:
+        #   httpGet:
+        #     path: /
+        #     port: 80
+        #   periodSeconds: 1
+        #   failureThreshold: 30
+        # readinessProbe:
+        #   httpGet:
+        #     path: /
+        #     port: 80
+        #   periodSeconds: 5
+        #   failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx
+  namespace: default
+spec:
+  selector:
+    app: my-deploy
+  ports:
+  - name: nginx
+    protocol: TCP
+    port: 80
+    targetPort: 80
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-pod
+spec:
+  terminationGracePeriodSeconds: 1
+  containers:
+  - name: util
+    image: vinsdocker/util
+    args: 
+    - "sleep"
+    - "3600"

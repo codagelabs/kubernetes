@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name:  candidate-app
+  namespace: default
+  labels:
+    app:  candidate-app
+spec:
+  selector:
+    matchLabels:
+      app: candidate-app
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app:  candidate-app
+    spec:
+      containers:
+      - name:  candidate-app
+        image:  vinsdocker/k8s-dice-candidate
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+          limits:
+            cpu: 2000m
+            memory: 2000Mi
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 2
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 3
+          timeoutSeconds: 2
+          successThreshold: 1
+          failureThreshold: 3
+          periodSeconds: 10
+        env:
+        - name: spring.data.mongodb.uri
+          valueFrom:
+            configMapKeyRef:
+              name: candidate-config
+              key: spring.data.mongodb.uri
+        - name: job.service.url
+          valueFrom:
+            configMapKeyRef:
+              name: candidate-config
+              key: job.service.url
+        ports:
+        - containerPort:  8080
+          name:  job-port
+      restartPolicy: Always

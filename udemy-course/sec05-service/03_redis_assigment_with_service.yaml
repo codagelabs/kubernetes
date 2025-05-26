@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k8s-deploy-assignment
+spec:
+  minReadySeconds:  10
+  strategy: 
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: k8s-deploy-assignment
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: k8s-deploy-assignment
+    spec: 
+      containers: 
+      - name: order-service
+        image: vinsdocker/k8s-deploy-assignment
+        ports:
+        - name: "app-port"
+          containerPort:  8080
+        env:
+        - name: spring.redis.host
+          value: redis  
+        - name: spring.redis.port
+          value: "6379"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+spec:
+  minReadySeconds:  10
+  strategy: 
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: redis
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec: 
+      containers: 
+      - name: redis
+        image: redis:6
+        ports:
+        - name: "redis-port"
+          containerPort:  6379
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+spec:
+  selector:
+      app: "redis"
+  ports:
+  - port: 6379
+    targetPort: 6379

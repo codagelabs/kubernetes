@@ -1,0 +1,7 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: express-config
+  namespace: default
+data:
+  ME_CONFIG_MONGODB_SERVER: mongo-service
